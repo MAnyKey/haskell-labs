@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module ITMOPrelude.Primitive where
 
-import Prelude (Show,Read)
+import Prelude (Show,Read, error)
 
 ---------------------------------------------
 -- Синтаксис лямбда-выражений
@@ -66,7 +66,10 @@ natOne = Succ Zero -- 1
 
 -- Сравнивает два натуральных числа
 natCmp :: Nat -> Nat -> Tri
-natCmp = undefined
+natCmp Zero Zero = EQ
+natCmp Zero (Succ _) = LE
+natCmp (Succ _) Zero = GT
+natCmp (Succ n) (Succ m) = natCmp n m
 
 -- n совпадает с m 
 natEq :: Nat -> Nat -> Bool
@@ -91,7 +94,9 @@ Zero     +. m = m
 infixl 6 -.
 -- Вычитание для натуральных чисел
 (-.) :: Nat -> Nat -> Nat
-n -. m = undefined
+Zero -. n = Zero
+n -. Zero = n
+(Succ n) -. (Succ m) = n -. m
 
 infixl 7 *.
 -- Умножение для натуральных чисел
@@ -101,83 +106,144 @@ Zero     *. m = Zero
 
 -- Целое и остаток от деления n на m
 natDivMod :: Nat -> Nat -> Pair Nat Nat
-natDivMod n m = undefined
+natDivMod n m = case compare of
+  LE -> Pair Zero n
+  EQ -> Pair natOne Zero
+  GT -> let rec = natDivMod (n -. m) m in
+    Pair (Succ $ fst rec) (snd rec)
+  where compare = natCmp n m
 
 natDiv n = fst . natDivMod n -- Целое
 natMod n = snd . natDivMod n -- Остаток
 
 -- Поиск GCD алгоритмом Евклида (должен занимать 2 (вычислителельная часть) + 1 (тип) строчки)
 gcd :: Nat -> Nat -> Nat
-gcd = undefined
+gcd n Zero = n
+gcd n m = gcd m (n `natMod` m)
 
 -------------------------------------------
 -- Целые числа
 
 -- Требуется, чтобы представление каждого числа было единственным
-data Int = UNDEFINED deriving (Show,Read)
+data Int =
+  Positive Nat |
+  NegativeMinusOne Nat
+  deriving (Show,Read)
 
-intZero   = undefined   -- 0
-intOne    = undefined     -- 1
-intNegOne = undefined -- -1
+natural (Positive n) = n
+natural (NegativeMinusOne _) = error "natural: negative Integer"
+
+fromNatural = Positive
+
+intZero   = Positive Zero
+intOne    = Positive $ Succ Zero
+intNegOne = NegativeMinusOne Zero
 
 -- n -> - n
 intNeg :: Int -> Int
-intNeg = undefined
+intNeg (Positive Zero) = Positive Zero
+intNeg (Positive (Succ n)) = NegativeMinusOne n
+intNeg (NegativeMinusOne n) = Positive $ Succ n
+
+intAbs (NegativeMinusOne n) = Positive $ Succ n
+intAbs n = n
 
 -- Дальше также как для натуральных
 intCmp :: Int -> Int -> Tri
-intCmp = undefined
+intCmp (Positive n) (Positive m) = natCmp n m
+intCmp (NegativeMinusOne _) (Positive _) = LE
+intCmp (Positive _) (NegativeMinusOne _) = GT
+intCmp (NegativeMinusOne n) (NegativeMinusOne m) = natCmp m n
 
 intEq :: Int -> Int -> Bool
-intEq = undefined
+intEq n m = case intCmp n m of
+  EQ -> True
+  otherwise -> False
 
 intLe :: Int -> Int -> Bool
-intLe = undefined
+intLe n m = case intCmp n m of
+  LE -> True
+  otherwise -> False
 
 infixl 6 .+., .-.
 -- У меня это единственный страшный терм во всём файле
 (.+.) :: Int -> Int -> Int
-n .+. m = undefined
+(Positive n) .+. (Positive m) = Positive $ n +. m
+(NegativeMinusOne n) .+. (NegativeMinusOne m) = NegativeMinusOne $ Succ (n +. m)
+(Positive n) .+. (NegativeMinusOne m) =
+  if' (natLe n (Succ m))
+  (NegativeMinusOne $ m -. n)
+  (Positive $ n -. (Succ m))
+n@(NegativeMinusOne _) .+. m@(Positive _) = m .+. n
 
 (.-.) :: Int -> Int -> Int
 n .-. m = n .+. (intNeg m)
 
 infixl 7 .*.
 (.*.) :: Int -> Int -> Int
-n .*. m = undefined
+(Positive n) .*. (Positive m) = Positive $ n *. m
+(NegativeMinusOne n) .*. (NegativeMinusOne m) = Positive $ (Succ n) *. (Succ m)
+(Positive Zero) .*. (NegativeMinusOne _) = Positive Zero
+(Positive n) .*. (NegativeMinusOne m) = NegativeMinusOne $ (n *. (Succ m)) -. natOne
+n@(NegativeMinusOne _) .*. m@(Positive _) = m .*. n
+
+intSign (Positive Zero) = intZero
+intSign (Positive (Succ _)) = intOne
+intSign (NegativeMinusOne _) = intNegOne
+
+intDiv :: Int -> Int -> Int
+intDiv (Positive n) (Positive m) = Positive $ natDiv n m
+intDiv n m = intSign n .*. intSign m .*. (intAbs n `intDiv` intAbs m)
 
 -------------------------------------------
 -- Рациональные числа
 
-data Rat = Rat Int Nat
+data Rat = Rat Int Nat deriving (Show, Read)
 
 ratNeg :: Rat -> Rat
 ratNeg (Rat x y) = Rat (intNeg x) y
 
 -- У рациональных ещё есть обратные элементы
 ratInv :: Rat -> Rat
-ratInv = undefined
+ratInv (Rat x y) = Rat (intSign x .*. Positive y) (natural . intAbs $ x)
 
 -- Дальше как обычно
 ratCmp :: Rat -> Rat -> Tri
-ratCmp = undefined
+ratCmp (Rat xNum xDenom) (Rat yNum yDenom) = 
+  if' (natEq xDenom yDenom)
+  (intCmp xNum yNum)
+  (ratCmp newX newY)
+  where newX = Rat (xNum .*. fromNatural yDenom) (xDenom *. yDenom)
+        newY = Rat (yNum .*. fromNatural xDenom) (yDenom *. xDenom)
 
 ratEq :: Rat -> Rat -> Bool
-ratEq = undefined
+ratEq n m = case ratCmp n m of
+  EQ -> True
+  otherwise -> False
 
 ratLe :: Rat -> Rat -> Bool
-ratLe = undefined
+ratLe n m = case ratCmp n m of
+  LE -> True
+  otherwise -> False
+
+ratReduce (Rat num denom) = Rat (num `intDiv` intGcd) (denom `natDiv` natGcd)
+  where natGcd = gcd (natural . intAbs $ num) (denom)
+        intGcd = fromNatural natGcd
 
 infixl 7 %+, %-
 (%+) :: Rat -> Rat -> Rat
-n %+ m = undefined
+(Rat xNum xDenom) %+ (Rat yNum yDenom) = ratReduce $ Rat newNumerator newDenominator
+  where denomN = fromNatural xDenom
+        denomM = fromNatural yDenom
+        newNumerator = (xNum .*. fromNatural yDenom) .+. (yNum .*. fromNatural xDenom)
+        newDenominator = xDenom *. yDenom
 
 (%-) :: Rat -> Rat -> Rat
 n %- m = n %+ (ratNeg m)
 
 infixl 7 %*, %/
 (%*) :: Rat -> Rat -> Rat
-n %* m = undefined
+(Rat xNum xDenom) %* (Rat yNum yDenom) = ratReduce $ Rat (xNum .*. yNum) (xDenom *. yDenom)
 
 (%/) :: Rat -> Rat -> Rat
 n %/ m = n %* (ratInv m)
