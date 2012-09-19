@@ -46,6 +46,9 @@ data Maybe a = Nothing | Just a deriving (Show,Read)
 -- Частый частный случай, изоморфно Either Unit Unit
 data Bool = False | True deriving (Show,Read)
 
+not True = False
+not False = True
+
 -- Следует отметить, что встроенный if с этим Bool использовать нельзя,
 -- зато case всегда работает.
 
@@ -181,9 +184,9 @@ n .-. m = n .+. (intNeg m)
 
 infixl 7 .*.
 (.*.) :: Int -> Int -> Int
+(Positive Zero) .*. (NegativeMinusOne _) = Positive Zero
 (Positive n) .*. (Positive m) = Positive $ n *. m
 (NegativeMinusOne n) .*. (NegativeMinusOne m) = Positive $ (Succ n) *. (Succ m)
-(Positive Zero) .*. (NegativeMinusOne _) = Positive Zero
 (Positive n) .*. (NegativeMinusOne m) = NegativeMinusOne $ (n *. (Succ m)) -. natOne
 n@(NegativeMinusOne _) .*. m@(Positive _) = m .*. n
 
