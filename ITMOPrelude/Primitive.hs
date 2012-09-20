@@ -26,7 +26,7 @@ example2''''' = z where
 undefined = undefined
 
 -- Ниже следует реализовать все термы, состоящие из undefined заглушки.
--- Любые термы можно переписывать (natEq и natLe --- хорошие кандидаты).
+-- Любые термы можно переписывать (natEq и natLt --- хорошие кандидаты).
 
 -------------------------------------------
 -- Примитивные типы
@@ -46,9 +46,6 @@ data Maybe a = Nothing | Just a deriving (Show,Read)
 -- Частый частный случай, изоморфно Either Unit Unit
 data Bool = False | True deriving (Show,Read)
 
-not True = False
-not False = True
-
 -- Следует отметить, что встроенный if с этим Bool использовать нельзя,
 -- зато case всегда работает.
 
@@ -57,7 +54,27 @@ if' True a b = a
 if' False a b = b
 
 -- Трихотомия. Замечательный тип, показывающий результат сравнения
-data Tri = LE | EQ | GT deriving (Show,Read)
+data Tri = LT | EQ | GT deriving (Show,Read)
+
+-------------------------------------------
+-- Булевы значения
+
+-- Логическое "НЕ"
+not :: Bool -> Bool
+not True = False
+not False = True
+
+infixr 3 &&
+-- Логическое "И"
+(&&) :: Bool -> Bool -> Bool
+True  && x = x
+False && _ = False
+
+infixr 2 ||
+-- Логическое "ИЛИ"
+(||) :: Bool -> Bool -> Bool
+True  || _ = True
+False || x = x
 
 -------------------------------------------
 -- Натуральные числа
@@ -70,7 +87,7 @@ natOne = Succ Zero -- 1
 -- Сравнивает два натуральных числа
 natCmp :: Nat -> Nat -> Tri
 natCmp Zero Zero = EQ
-natCmp Zero (Succ _) = LE
+natCmp Zero (Succ _) = LT
 natCmp (Succ _) Zero = GT
 natCmp (Succ n) (Succ m) = natCmp n m
 
@@ -82,11 +99,11 @@ natEq (Succ _) Zero     = False
 natEq (Succ n) (Succ m) = natEq n m
 
 -- n меньше m
-natLe :: Nat -> Nat -> Bool
-natLe Zero     Zero     = False
-natLe Zero     (Succ m) = True
-natLe (Succ n) Zero     = False
-natLe (Succ n) (Succ m) = natLe n m
+natLt :: Nat -> Nat -> Bool
+natLt Zero     Zero     = False
+natLt Zero     (Succ m) = True
+natLt (Succ n) Zero     = False
+natLt (Succ n) (Succ m) = natLt n m
 
 infixl 6 +.
 -- Сложение для натуральных чисел
@@ -110,7 +127,7 @@ Zero     *. m = Zero
 -- Целое и остаток от деления n на m
 natDivMod :: Nat -> Nat -> Pair Nat Nat
 natDivMod n m = case compare of
-  LE -> Pair Zero n
+  LT -> Pair Zero n
   EQ -> Pair natOne Zero
   GT -> let rec = natDivMod (n -. m) m in
     Pair (Succ $ fst rec) (snd rec)
@@ -154,7 +171,7 @@ intAbs n = n
 -- Дальше также как для натуральных
 intCmp :: Int -> Int -> Tri
 intCmp (Positive n) (Positive m) = natCmp n m
-intCmp (NegativeMinusOne _) (Positive _) = LE
+intCmp (NegativeMinusOne _) (Positive _) = LT
 intCmp (Positive _) (NegativeMinusOne _) = GT
 intCmp (NegativeMinusOne n) (NegativeMinusOne m) = natCmp m n
 
@@ -163,9 +180,9 @@ intEq n m = case intCmp n m of
   EQ -> True
   otherwise -> False
 
-intLe :: Int -> Int -> Bool
-intLe n m = case intCmp n m of
-  LE -> True
+intLt :: Int -> Int -> Bool
+intLt n m = case intCmp n m of
+  LT -> True
   otherwise -> False
 
 infixl 6 .+., .-.
@@ -174,7 +191,7 @@ infixl 6 .+., .-.
 (Positive n) .+. (Positive m) = Positive $ n +. m
 (NegativeMinusOne n) .+. (NegativeMinusOne m) = NegativeMinusOne $ Succ (n +. m)
 (Positive n) .+. (NegativeMinusOne m) =
-  if' (natLe n (Succ m))
+  if' (natLt n (Succ m))
   (NegativeMinusOne $ m -. n)
   (Positive $ n -. (Succ m))
 n@(NegativeMinusOne _) .+. m@(Positive _) = m .+. n
@@ -224,9 +241,9 @@ ratEq n m = case ratCmp n m of
   EQ -> True
   otherwise -> False
 
-ratLe :: Rat -> Rat -> Bool
-ratLe n m = case ratCmp n m of
-  LE -> True
+ratLt :: Rat -> Rat -> Bool
+ratLt n m = case ratCmp n m of
+  LT -> True
   otherwise -> False
 
 ratReduce (Rat num denom) = Rat (num `intDiv` intGcd) (denom `natDiv` natGcd)
