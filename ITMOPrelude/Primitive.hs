@@ -3,6 +3,8 @@ module ITMOPrelude.Primitive where
 
 import Prelude (Show,Read, error)
 
+import ITMOPrelude.Algebra
+
 ---------------------------------------------
 -- Синтаксис лямбда-выражений
 
@@ -141,6 +143,10 @@ gcd :: Nat -> Nat -> Nat
 gcd n Zero = n
 gcd n m = gcd m (n `natMod` m)
 
+instance Monoid Nat where 
+  mempty = Zero
+  mappend = (+.)
+
 -------------------------------------------
 -- Целые числа
 
@@ -215,6 +221,21 @@ intDiv :: Int -> Int -> Int
 intDiv (Positive n) (Positive m) = Positive $ natDiv n m
 intDiv n m = intSign n .*. intSign m .*. (intAbs n `intDiv` intAbs m)
 
+instance Monoid Int where
+  mempty = intZero
+  mappend = (.+.)
+
+instance Group Int where
+  gempty = intZero
+  ginv = intNeg
+  gappend = (.+.)
+
+data MulInt = Mult Int
+
+instance Monoid MulInt where
+  mempty = Mult intZero
+  mappend (Mult a) (Mult b) = Mult $ a .*. b
+
 -------------------------------------------
 -- Рациональные числа
 
@@ -267,6 +288,15 @@ infixl 7 %*, %/
 
 (%/) :: Rat -> Rat -> Rat
 n %/ m = n %* (ratInv m)
+
+instance Monoid Rat where
+  mempty = Rat intZero natOne
+  mappend = (%+)
+
+instance Group Rat where
+  gempty = Rat intZero natOne
+  gappend = (%+)
+  ginv = ratNeg
 
 -------------------------------------------
 -- Операции над функциями.
