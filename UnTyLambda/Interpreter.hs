@@ -1,6 +1,4 @@
-module Lambda where
-
-import Prelude hiding (iterate, elem)
+module UnTyLambda.Interpreter where
 
 type Variable = String
 
@@ -29,13 +27,6 @@ subst var what term = case term of
     Var v    -> if v == var then what else term
     Abs v t  -> if v == var then term else Abs v (subst var what t)
     App t t' -> App (subst var what t) (subst var what t')
-
--- Содержит ли список элемент?
-elem a [] = False
-elem a (l:ls) = if a == l then True else elem a ls
-
--- Любопытная функция
-iterate f x = (:) x $ iterate f (f x)
 
 -- Генерирует список имён, производных от v, не входящих в fv
 newname fv v = head . filter (\x -> not . elem x $ fv) . iterate ('_':) $ v
@@ -75,9 +66,11 @@ applicative' term = if (hasRedexes term) then applicative' $ applicativeReduce t
 applicativeReduce term = case term of
   Var _ -> term
   Abs var subterm -> Abs var $ applicativeReduce subterm
-  App term term' -> if hasRedexes term' then App term $ applicativeReduce term' else case term of
-    Abs v subt -> betaReduct v term' subt
-    _ -> App (applicativeReduce term) term'
+  App term term' -> if hasRedexes term' 
+                    then App term $ applicativeReduce term' 
+                    else case term of
+                      Abs v subt -> betaReduct v term' subt
+                      _ -> App (applicativeReduce term) term'
 
 
 -- Маркер конца ресурсов
