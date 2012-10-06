@@ -3,11 +3,15 @@ module ITMOPrelude.Tree where
 
 import Prelude (Show,Read,error, show)
 import ITMOPrelude.Primitive
+import ITMOPrelude.Category
 
 data Tree a =
   Node a (Tree a) (Tree a) |
   Leaf
   deriving (Show, Read)
+
+instance Functor Tree where
+  fmap = tmap
 
 emptyTree = Leaf
 addToRoot x t = Node x t Leaf

@@ -4,12 +4,15 @@ module ITMOPrelude.List where
 import Prelude (Show,Read,error, show)
 import qualified Prelude as P ((++))
 import ITMOPrelude.Primitive
+import ITMOPrelude.Category
 
 ---------------------------------------------
 -- Что надо делать?
 --
 -- Все undefined превратить в требуемые термы.
 -- Звёздочкой (*) отмечены места, в которых может потребоваться думать.
+
+flip f x y = f y x
 
 ---------------------------------------------
 -- Определение
@@ -22,6 +25,17 @@ instance Show a => Show (List a) where
 
 showList (Cons x Nil) = (P.++) (show x)  "]"
 showList (Cons x xs) = (P.++) (show x) ((P.++) ", " (showList xs))
+
+instance Functor List where
+  fmap = map
+
+instance Applicative List where
+  pure = flip Cons Nil
+  fs <*> xs = concatMap (flip map xs) fs
+  
+instance Monad List where
+  return = pure
+  as >>= f = concatMap f as
 
 ---------------------------------------------
 -- Операции
