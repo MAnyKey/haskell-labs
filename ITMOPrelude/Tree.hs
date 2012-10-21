@@ -3,7 +3,7 @@ module ITMOPrelude.Tree where
 
 import Prelude (Show,Read,error, show)
 import ITMOPrelude.Primitive
-import ITMOPrelude.Category
+import ITMOPrelude.Categories
 
 data Tree a =
   Node a (Tree a) (Tree a) |

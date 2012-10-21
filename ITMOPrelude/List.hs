@@ -4,7 +4,7 @@ module ITMOPrelude.List where
 import Prelude (Show,Read,error, show)
 import qualified Prelude as P ((++))
 import ITMOPrelude.Primitive
-import ITMOPrelude.Category
+import ITMOPrelude.Categories
 
 ---------------------------------------------
 -- Что надо делать?

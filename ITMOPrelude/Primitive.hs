@@ -4,7 +4,7 @@ module ITMOPrelude.Primitive where
 import Prelude (Show,Read, error)
 
 import ITMOPrelude.Algebra
-import ITMOPrelude.Category
+import ITMOPrelude.Categories
 
 ---------------------------------------------
 -- Синтаксис лямбда-выражений

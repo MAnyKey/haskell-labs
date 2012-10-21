@@ -1,5 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module ITMOPrelude.Category where
+module ITMOPrelude.Categories where
 
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
