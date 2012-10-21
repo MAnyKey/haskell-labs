@@ -250,7 +250,7 @@ instance Group Int where
 data MulInt = Mult Int
 
 instance Monoid MulInt where
-  mempty = Mult intZero
+  mempty = Mult intOne
   mappend (Mult a) (Mult b) = Mult $ a .*. b
 
 -------------------------------------------
