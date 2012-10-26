@@ -3,9 +3,6 @@ module ITMOPrelude.Primitive where
 
 import Prelude (Show,Read, error)
 
-import ITMOPrelude.Algebra
-import ITMOPrelude.Categories
-
 ---------------------------------------------
 -- Синтаксис лямбда-выражений
 
@@ -45,22 +42,6 @@ data Either a b = Left a | Right b deriving (Show,Read)
 
 -- Частый частный случай, изоморфно Either Unit a
 data Maybe a = Nothing | Just a deriving (Show,Read)
-
-instance Functor Maybe where
-  fmap f (Just a) = Just $ f a
-  fmap f Nothing = Nothing
-
-instance Applicative Maybe where
-  pure = Just
-  Nothing <*> _ = Nothing
-  (Just f) <*> x = fmap f x
-
-instance Monad Maybe where
-  return = Just
-  
-  Nothing >>= _ = Nothing
-  (Just x) >>= f = f x
-  
 
 -- Частый частный случай, изоморфно Either Unit Unit
 data Bool = False | True deriving (Show,Read)
@@ -160,9 +141,6 @@ gcd :: Nat -> Nat -> Nat
 gcd n Zero = n
 gcd n m = gcd m (n `natMod` m)
 
-instance Monoid Nat where 
-  mempty = Zero
-  mappend = (+.)
 
 -------------------------------------------
 -- Целые числа
@@ -238,25 +216,17 @@ intDiv :: Int -> Int -> Int
 intDiv (Positive n) (Positive m) = Positive $ natDiv n m
 intDiv n m = intSign n .*. intSign m .*. (intAbs n `intDiv` intAbs m)
 
-instance Monoid Int where
-  mempty = intZero
-  mappend = (.+.)
 
-instance Group Int where
-  gempty = intZero
-  ginv = intNeg
-  gappend = (.+.)
 
-data MulInt = Mult Int
 
-instance Monoid MulInt where
-  mempty = Mult intOne
-  mappend (Mult a) (Mult b) = Mult $ a .*. b
 
 -------------------------------------------
 -- Рациональные числа
 
 data Rat = Rat Int Nat deriving (Show, Read)
+
+ratZero = Rat intZero natOne
+ratOne = Rat intOne natOne
 
 ratNeg :: Rat -> Rat
 ratNeg (Rat x y) = Rat (intNeg x) y
@@ -306,21 +276,15 @@ infixl 7 %*, %/
 (%/) :: Rat -> Rat -> Rat
 n %/ m = n %* (ratInv m)
 
-instance Monoid Rat where
-  mempty = Rat intZero natOne
-  mappend = (%+)
-
-instance Group Rat where
-  gempty = Rat intZero natOne
-  gappend = (%+)
-  ginv = ratNeg
 
 -------------------------------------------
 -- Операции над функциями.
 -- Определены здесь, но использовать можно и выше
 
+id x = x
+
 infixr 9 .
-f . g = \ x -> f (g x)
+f . g = \x -> f (g x)
 
 infixr 0 $
 f $ x = f x
