@@ -5,10 +5,13 @@ import ITMOPrelude.Primitive
 import ITMOPrelude.List
 import ITMOPrelude.Tree
 
--- class Category cat where
---   id :: cat a a
---   (.) :: cat b c -> cat a b -> cat a c
-
+class Category cat where
+  id :: cat a a
+  (.) :: cat b c -> cat a b -> cat a c
+  
+instance Category (->) where
+  id = \x -> x
+  f . g = \x -> f (g x)
 
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
@@ -64,5 +67,3 @@ instance Monad (State s) where
     return a = State $ \s -> (s, a)
     ma >>= f = State $ \s -> let (s', a) = runState ma s 
                              in runState (f a) s'
-
-                              
