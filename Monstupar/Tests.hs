@@ -1,5 +1,7 @@
 module Monstupar.Tests where
 
+import System.IO
+import System.IO.Unsafe
 import Monstupar.Core
 import Monstupar.Derived
 
@@ -18,12 +20,14 @@ infixl 2 &.&
 --------------------------------------------------------------------------------
 -- Тесты
 
+reccur = (do
+  char '('
+  reccur
+  char ')'
+  reccur) <|> ok
+
 -- Правильная скобочная последовательность
-balPar = eof <|> (string "()" >> return ()) <|> (do
-    char '('
-    balPar
-    char ')'
-    balPar)
+balPar = reccur >> eof
 
 balParTest = mustParse ""
          &.& mustFail  "("
@@ -38,7 +42,14 @@ balParTest = mustParse ""
 -- Список натуральных чисел
 -- тут следует использовать класс Read
 natList :: Monstupar Char [Integer]
-natList = undefined
+natList = do 
+  s <- digits1 `sepby1` (many1 $ char ',')
+  eof
+  return (map read s)
+
+digit = oneOf ['0'..'9']
+digits = many digit
+digits1 = many1 digit 
 
 natListTest = mustFail  ""
           &.& mustParse "0"

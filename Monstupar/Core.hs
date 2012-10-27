@@ -16,8 +16,10 @@ data ParseError = ParseError
 newtype Monstupar s a = Monstupar { runParser :: [s] -> Either ParseError ([s], a) }
 
 instance Monad (Monstupar s) where
-    return a = Monstupar $ \s -> Right (s , a)
-    ma >>= f = undefined
+  return a = Monstupar $ \s -> Right (s , a)
+  ma >>= f = Monstupar $ \s -> case runParser ma s of
+    Left e -> Left e
+    Right (cs, a) -> runParser (f a) cs
 
 --------------------------------------------------------------------------------
 -- Примитивные парсеры.
@@ -42,11 +44,19 @@ eof = Monstupar $ \s -> case s of
 infixr 2 <|>
 -- Сначала первый парсер, если он фейлится, то второй
 (<|>) :: Monstupar s a -> Monstupar s a -> Monstupar s a
-a <|> b = Monstupar $ \s -> undefined
+a <|> b = Monstupar $ \s -> case runParser a s of
+  Left e -> runParser b s
+  Right val -> Right val
 
 -- В голове ввода сейчас нечто, удовлетворяющее p
 like :: (s -> Bool) -> Monstupar s s
-like p = Monstupar $ \s -> undefined
+like p = Monstupar $ \s -> case s of
+  [] -> Left ParseError
+  (c:cs) -> if p c
+            then Right (cs, c)
+            else Left ParseError
+  
+                                
 
 -- Сюда можно добавлять ещё какие-то примитивные парсеры
 -- если они понадобятся
