@@ -27,3 +27,7 @@ setExitCode :: Nat -> IO ()
 setExitCode n = State setExitCode'
   where setExitCode' world = (newWorld, ())
           where newWorld = RealWorld (stdIn world) (stdOut world) n
+
+testInfinite :: List Nat -> IO ()
+testInfinite Nil = return ()
+testInfinite (Cons x xs) = putNat x >> testInfinite xs

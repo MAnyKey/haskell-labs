@@ -232,3 +232,8 @@ zipWith :: (a -> b -> c) -> List a -> List b -> List c
 zipWith f (Cons x xs) (Cons y ys) = (f x y) `Cons` (zipWith f xs ys)
 zipWith f Nil ys = Nil
 zipWith f xs Nil = Nil
+
+iterate f x = x `Cons` iterate' x
+  where iterate' x = x  `Cons` (iterate' $ f x)
+
+nats = iterate Succ Zero
